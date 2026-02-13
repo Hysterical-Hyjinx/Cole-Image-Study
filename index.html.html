@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Selection Study - Northumbria University</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  #gridContainer, #quizContainer, #feedbackContainer { display: none; }
+
+  #imageGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 1em;
+  }
+
+  @media (max-width: 768px) {
+    #imageGrid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .imgCell {
+    position: relative;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+  .imgCell img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .imgCell.selected {
+    border-color: #007BFF;
+  }
+
+  #finishBtn, #quizNextBtn, #feedbackSubmitBtn { margin-top: 10px; }
+
+  #phaseTitle {
+    font-weight: bold;
+    margin-bottom: 0.25em;
+  }
+
+  .confidenceBar {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 6px 8px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    pointer-events: auto;
+  }
+  .imgCell.selected .confidenceBar { display: flex; }
+  .confidenceBar label {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .confidenceBar input[type="range"] {
+    width: 100%;
+  }
+  .confidenceValue {
+    font-size: 12px;
+    min-width: 1.5em;
+    text-align: center;
+  }
+
+  /* Quiz styles */
+  .quiz-question {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+  }
+  .quiz-question label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  .quiz-options {
+    display: flex;
+    gap: 20px;
+  }
+  .quiz-options label {
+    font-weight: normal;
+    cursor: pointer;
+  }
+
+  /* Feedback styles */
+  #feedbackText {
+    width: 100%;
+    min-height: 150px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+  }
+  .feedback-label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  /* Download screen styling */
+  .download-instructions {
+    max-width: 700px;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #007BFF;
+    margin: 20px 0;
+  }
+  .download-instructions h3 {
+    margin-top: 0;
+    color: #007BFF;
+  }
+  .download-instructions ol {
+    line-height: 1.8;
+  }
+  .download-instructions strong {
+    color: #d9534f;
+  }
+  .button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .button-group button, .button-group a {
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+  }
+  .primary-btn {
+    background: #007BFF;
+    color: white;
+    border: none;
+  }
+  .secondary-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+  }
+  .primary-btn:hover {
+    background: #0056b3;
+  }
+  .secondary-btn:hover {
+    background: #545b62;
+  }
+</style>
+</head>
+<body>
+<h1>Image Selection Task</h1>
+
+<!-- START SCREEN -->
+<div id="setup">
+  <div style="max-width: 700px; background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffc107;">
+    <h3 style="margin-top: 0;">⚠️ Before You Begin</h3>
+    <p><strong>Please download and read the study documents:</strong></p>
+    <ul>
+      <li><a href="Participant-Information-Sheet.pdf" target="_blank">Participant Information Sheet</a></li>
+      <li><a href="Consent-Form.pdf" target="_blank">Consent Form</a> - Please print and sign this before starting</li>
+    </ul>
+    <p style="margin-bottom: 0;"><em>You will need to email the signed consent form along with your results at the end.</em></p>
+  </div>
+
+  <div>
+    <label>Participant Code:
+      <input type="text" id="participantCode" placeholder="e.g JS15X (initials, day of birth, random letter)" size="50">
+    </label>
+  </div>
+  <div style="margin-top: 15px;">
+    <label>Email (for Session 2 reminder in ~7 days):
+      <input type="email" id="participantEmail" placeholder="your.email@example.com" size="50">
+    </label>
+    <p style="font-size: 14px; color: #666; margin-top: 5px;">
+      <em>Optional but recommended - we'll send you one reminder when Session 2 is ready</em>
+    </p>
+  </div>
+  <p style="max-width: 600px;">
+    <strong>⚠️ IMPORTANT: This is a TWO-SESSION study.</strong><br>
+    You will complete this task today (Session 1, ~20 minutes), then again in approximately one week (Session 2, ~20 minutes).
+    <strong>Both sessions are required</strong> - partial completion cannot be used for the research.
+  </p>
+  <p style="max-width: 600px;">
+    When you click <strong>Start</strong>, you will first answer some familiarity questions, then see a series of locations.
+    For each location, select <strong>one</strong> image and set how confident you are
+    (1 = not confident, 10 = very confident) that you would remember it later.
+  </p>
+  <button id="startBtn">Start</button>
+</div>
+
+<!-- FAMILIARITY QUIZ -->
+<div id="quizContainer">
+  <h2>Familiarity Questions</h2>
+  <p>Please answer the following questions about your familiarity with locations in Newcastle:</p>
+  
+  <div class="quiz-question">
+    <label>Are you familiar with Byker?</label>
+    <div class="quiz-options">
+      <label><input type="radio" name="q1" value="yes"> Yes</label>
+      <label><input type="radio" name="q1" value="no"> No</label>
+    </div>
+  </div>
+
+  <div class="quiz-question">
+    <label>Are you familiar with the Quayside?</label>
+    <div class="quiz-options">
+      <label><input type="radio" name="q2" value="yes"> Yes</label>
+      <label><input type="radio" name="q2" value="no"> No</label>
+    </div>
+  </div>
+
+  <div class="quiz-question">
+    <label>Are you familiar with East/Central Newcastle?</label>
+    <div class="quiz-options">
+      <label><input type="radio" name="q3" value="yes"> Yes</label>
+      <label><input type="radio" name="q3" value="no"> No</label>
+    </div>
+  </div>
+
+  <div class="quiz-question">
+    <label>Are you familiar with Northumbria University campus?</label>
+    <div class="quiz-options">
+      <label><input type="radio" name="q4" value="yes"> Yes</label>
+      <label><input type="radio" name="q4" value="no"> No</label>
+    </div>
+  </div>
+
+  <div class="quiz-question">
+    <label>Are you familiar with Ouseburn?</label>
+    <div class="quiz-options">
+      <label><input type="radio" name="q5" value="yes"> Yes</label>
+      <label><input type="radio" name="q5" value="no"> No</label>
+    </div>
+  </div>
+
+  <button id="quizNextBtn">Continue</button>
+</div>
+
+<!-- PHASED TASK UI -->
+<div id="gridContainer">
+  <div id="phaseTitle"></div>
+  <p id="instructions">
+    Select ONE image for this location and set your confidence (1–10).
+  </p>
+  <div id="imageGrid"></div>
+  <button id="finishBtn">Next</button>
+</div>
+
+<!-- FEEDBACK SCREEN -->
+<div id="feedbackContainer">
+  <h2>Final Question</h2>
+  <label class="feedback-label">Why did you select the images that you did?</label>
+  <textarea id="feedbackText" placeholder="Please describe your reasoning for selecting the images you chose..."></textarea>
+  <br>
+  <button id="feedbackSubmitBtn">Submit</button>
+</div>
+
+<!-- DOWNLOAD SCREEN -->
+<div id="downloadContainer" style="display:none;">
+  <h2>Thank You for Completing the Study!</h2>
+  
+  <div class="download-instructions">
+    <h3>📋 Next Steps - Please Read Carefully</h3>
+    <p>To complete your participation, please follow these steps:</p>
+    <ol>
+      <li><strong>Download your results</strong> using the button below (this saves a JSON file)</li>
+      <li><strong>Download and sign the consent form</strong> if you haven't already</li>
+      <li><strong>Email BOTH files</strong> to: <strong>w23012752@northumbria.ac.uk</strong>
+        <ul>
+          <li>Your results file (JSON)</li>
+          <li>Your signed consent form (PDF)</li>
+        </ul>
+      </li>
+    </ol>
+    <p style="margin-bottom: 0;"><em>Your participation is only complete once both files are received. Thank you!</em></p>
+  </div>
+
+  <div class="button-group">
+    <button id="downloadBtn" class="primary-btn">Download Results (JSON)</button>
+    <a href="Consent-Form.pdf" download class="secondary-btn">Download Consent Form</a>
+  </div>
+
+  <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+    <h3 style="margin-top: 0; color: #856404;">⏰ Don't Forget Session 2!</h3>
+    <p style="margin-bottom: 0;">
+      <strong>Set a reminder now!</strong> You'll need to return to this website in approximately 7 days to complete Session 2. 
+      Both sessions are required for your data to be included in the research. 
+      We'll email you a reminder if you provided your email address.
+    </p>
+  </div>
+
+  <p style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 4px;">
+    <strong>Contact:</strong> If you have any questions, please email <a href="mailto:w23012752@northumbria.ac.uk">w23012752@northumbria.ac.uk</a>
+  </p>
+</div>
+
+<script>
+(function() {
+  const participantCodeEl = document.getElementById('participantCode');
+  const participantEmailEl = document.getElementById('participantEmail');
+  const startBtn = document.getElementById('startBtn');
+  const setupDiv = document.getElementById('setup');
+  const gridContainer = document.getElementById('gridContainer');
+  const quizContainer = document.getElementById('quizContainer');
+  const feedbackContainer = document.getElementById('feedbackContainer');
+  const downloadContainer = document.getElementById('downloadContainer');
+  const imageGrid = document.getElementById('imageGrid');
+  const finishBtn = document.getElementById('finishBtn');
+  const quizNextBtn = document.getElementById('quizNextBtn');
+  const feedbackSubmitBtn = document.getElementById('feedbackSubmitBtn');
+  const phaseTitleEl = document.getElementById('phaseTitle');
+  const instructionsEl = document.getElementById('instructions');
+  const feedbackText = document.getElementById('feedbackText');
+
+  const phaseDefinitions = [
+    {
+      id: 'monuments_real',
+      name: 'Monuments',
+      sceneCategory: 'monuments',
+      group: 'first',
+      images: [
+        { name: 'monument_angel_r1', url: 'images/monument_angel_r1.jpg', category: 'real' },
+        { name: 'monument_angel_r2.jpg', url: 'images/monument_angel_r2.jpg', category: 'real' },
+        { name: 'monument_angel_r3.jpg', url: 'images/monument_angel_r3.jpg', category: 'real' },
+        { name: 'monument_angel_r4.jpg', url: 'images/monument_angel_r4.jpg', category: 'real' },
+        { name: 'monument_angel_r5.jpg', url: 'images/monument_angel_r5.jpg', category: 'real' },
+        { name: 'monument_angel_r6.jpg', url: 'images/monument_angel_r6.jpg', category: 'real' },
+        { name: 'monument_angel_r7.jpg', url: 'images/monument_angel_r7.jpg', category: 'real' },
+        { name: 'monument_angel_r8.jpg', url: 'images/monument_angel_r8.jpg', category: 'real' },
+        { name: 'monument_angel_r9.jpg', url: 'images/monument_angel_r9.jpg', category: 'real' }
+      ]
+    },
+    {
+      id: 'hospitality_hybrid',
+      name: 'Hospitality',
+      sceneCategory: 'hospitality',
+      group: 'first',
+      images: [
+        { name: 'hospitality_D&P_h1.jpg', url: 'images/hospitality_D&P_h1.jpg', category: 'hybrid' },
+        { name: 'hospitality_d&p_h2.jpg', url: 'images/hospitality_d&p_h2.jpg', category: 'hybrid' },
+        { name: 'hospitality_chuchos_h3.jpg', url: 'images/hospitality_chuchos_h3.jpg', category: 'hybrid' },
+        { name: 'hospitality_cumberland_h4.jpg', url: 'images/hospitality_cumberland_h4.jpg', category: 'hybrid' },
+        { name: 'hospitality_greggs_h5.jpg', url: 'images/hospitality_greggs_h5.jpg', category: 'hybrid' },
+        { name: 'hospitality_onlygreggs_h6.jpg', url: 'images/hospitality_onlygreggs_h6.jpg', category: 'hybrid' },
+        { name: 'hospitality_fusedgreggs_h7.jpg', url: 'images/hospitality_fusedgreggs_h7.jpg', category: 'hybrid' },
+        { name: 'hospitality_fight_h8.jpg', url: 'images/hospitality_fight_h8.jpg', category: 'hybrid' },
+        { name: 'hospitality_horse_h9.jpg', url: 'images/hospitality_horse_h9.jpg', category: 'hybrid' }
+      ]
+    },
+    {
+      id: 'accommodation_ai',
+      name: 'Accommodation',
+      sceneCategory: 'accommodation',
+      group: 'first',
+      images: [
+        { name: 'accommodation_rectangle_a1.jpg', url: 'images/accommodation_rectangle_a1.jpg', category: 'ai' },
+        { name: 'accommodation_bykerwall_a2.jpg', url: 'images/accommodation_bykerwall_a2.jpg', category: 'ai' },
+        { name: 'accommodation_winn_a3.jpg', url: 'images/accommodation_winn_a3.jpg', category: 'ai' },
+        { name: 'accommodation_trinitysquare_a4.jpg', url: 'images/accommodation_trinitysquare_a4.jpg', category: 'ai' },
+        { name: 'accommodation_trinitystreet_a5.jpg', url: 'images/accommodation_trinitystreet_a5.jpg', category: 'ai' },
+        { name: 'accommodation_winnstreet_a6.jpg', url: 'images/accommodation_winnstreet_a6.jpg', category: 'ai' },
+        { name: 'accommodation_gateshead_a7.jpg', url: 'images/accommodation_gateshead_a7.jpg', category: 'ai' },
+        { name: 'accommodation_bykeralt_a8.jpg', url: 'images/accommodation_bykeralt_a8.jpg', category: 'ai' },
+        { name: 'accommodation_ouseburnalt_a9.jpg', url: 'images/accommodation_ouseburnalt_a9.jpg', category: 'ai' }
+      ]
+    },
+    {
+      id: 'bridges_mixed',
+      name: 'Bridges',
+      sceneCategory: 'bridges',
+      group: 'second',
+      images: [
+        { name: 'bridges_byker_r1.jpg', url: 'images/bridges_byker_r1.jpg', category: 'real' },
+        { name: 'bridges_highlevel_r2.jpg', url: 'images/bridges_highlevel_r2.jpg', category: 'real' },
+        { name: 'bridges_redheugh_r3.jpg', url: 'images/bridges_redheugh_r3.jpg', category: 'real' },
+        { name: 'bridges_train_h1.jpg', url: 'images/bridges_train_h1.jpg', category: 'hybrid' },
+        { name: 'bridges_blue_h2.jpg', url: 'images/bridges_blue_h2.jpg', category: 'hybrid' },
+        { name: 'bridges_lowlevel_h3.jpg', url: 'images/bridges_lowlevel_h3.jpg', category: 'hybrid' },
+        { name: 'bridges_tyne_a1.jpg', url: 'images/bridges_tyne_a1.jpg', category: 'ai' },
+        { name: 'bridges_millenium_a2.jpg', url: 'images/bridges_millenium_a2.jpg', category: 'ai' },
+        { name: 'bridges_swing_a3.jpg', url: 'images/bridges_swing_a3.jpg', category: 'ai' }
+      ]
+    },
+    {
+      id: 'campus_mixed',
+      name: 'Campus',
+      sceneCategory: 'campus',
+      group: 'second',
+      images: [
+        { name: 'campus_compsci_r1.jpg', url: 'images/campus_compsci_r1.jpg', category: 'real' },
+        { name: 'campus_statue_r2.jpg', url: 'images/campus_statue_r2.jpg', category: 'real' },
+        { name: 'campus_sunderland_r3.jpg', url: 'images/campus_sunderland_r3.jpg', category: 'real' },
+        { name: 'campus_CIS_h1.jpg', url: 'images/campus_CIS_h1.jpg', category: 'hybrid' },
+        { name: 'campus_zone_h2.jpg', url: 'images/campus_zone_h2.jpg', category: 'hybrid' },
+        { name: 'campus_construction_h3.jpg', url: 'images/campus_construction_h3.jpg', category: 'hybrid' },
+        { name: 'campus_courtyard_a1.jpg', url: 'images/campus_courtyard_a1.jpg', category: 'ai' },
+        { name: 'campus_library_a2.jpg', url: 'images/campus_library_a2.jpg', category: 'ai' },
+        { name: 'campus_corridor_a3.jpg', url: 'images/campus_corridor_a3.jpg', category: 'ai' }
+      ]
+    },
+    {
+      id: 'urbandecay_mixed',
+      name: 'Urban area',
+      sceneCategory: 'urban_decay',
+      group: 'second',
+      images: [
+        { name: 'decay_ouseburn_r1.jpg', url: 'images/decay_ouseburn_r1.jpg', category: 'real' },
+        { name: 'decay_quayside_r2.jpg', url: 'images/decay_quayside_r2.jpg', category: 'real' },
+        { name: 'decay_city_r3.jpg', url: 'images/decay_city_r3.jpg', category: 'real' },
+        { name: 'decay_bykerarch_h1.jpg', url: 'images/decay_bykerarch_h1.jpg', category: 'hybrid' },
+        { name: 'decay_alley_h2.jpg', url: 'images/decay_alley_h2.jpg', category: 'hybrid' },
+        { name: 'decay_backstreet_h3.jpg', url: 'images/decay_backstreet_h3.jpg', category: 'hybrid' },
+        { name: 'decay_lofts_a1.jpg', url: 'images/decay_lofts_a1.jpg', category: 'ai' },
+        { name: 'decay_warehouse_a2.jpg', url: 'images/decay_warehouse_a2.jpg', category: 'ai' },
+        { name: 'decay_walkway_a3.jpg', url: 'images/decay_walkway_a3.jpg', category: 'ai' }
+      ]
+    }
+  ];
+
+  let phases = [];
+  let images = [];
+  let selections = [];
+  let currentPhaseIndex = 0;
+  let phaseStartTime = 0;
+  let quizResponses = {};
+  let qualitativeFeedback = '';
+
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  function initExperiment() {
+    const firstThree = phaseDefinitions.filter(p => p.group === 'first');
+    const lastThree = phaseDefinitions.filter(p => p.group === 'second');
+    
+    shuffle(firstThree);
+    shuffle(lastThree);
+    
+    phases = [...firstThree, ...lastThree];
+
+    images = [];
+    phases.forEach((phase, pIndex) => {
+      phase.images.forEach(img => {
+        images.push({
+          name: img.name,
+          url: img.url,
+          category: img.category,
+          phaseIndex: pIndex
+        });
+      });
+    });
+
+    selections = images.map(img => ({
+      imageName: img.name,
+      category: img.category,
+      selected: false,
+      time: null,
+      order: null,
+      confidence: null
+    }));
+
+    currentPhaseIndex = 0;
+    setupDiv.style.display = 'none';
+    quizContainer.style.display = 'none';
+    gridContainer.style.display = 'block';
+
+    showPhase(currentPhaseIndex);
+  }
+
+  function showPhase(phaseIndex) {
+    const phase = phases[phaseIndex];
+    phaseTitleEl.textContent = phase.name;
+    instructionsEl.textContent = 'Select ONE image for this location and set your confidence (1–10).';
+
+    imageGrid.innerHTML = '';
+    phaseStartTime = performance.now();
+
+    finishBtn.textContent = (phaseIndex === phases.length - 1) ? 'Finish' : 'Next';
+
+    const phaseImages = [];
+    images.forEach((img, idx) => {
+      if (img.phaseIndex === phaseIndex) {
+        phaseImages.push({ idx, img });
+      }
+    });
+
+    shuffle(phaseImages);
+
+    phaseImages.forEach(({ idx }) => {
+      const cell = document.createElement('div');
+      cell.className = 'imgCell';
+      cell.dataset.globalIndex = String(idx);
+
+      const imgEl = document.createElement('img');
+      imgEl.src = images[idx].url;
+      imgEl.alt = images[idx].name;
+      cell.appendChild(imgEl);
+
+      const bar = document.createElement('div');
+      bar.className = 'confidenceBar';
+      bar.addEventListener('click', (e) => e.stopPropagation());
+
+      const label = document.createElement('label');
+      label.textContent = 'Confidence';
+
+      const range = document.createElement('input');
+      range.type = 'range';
+      range.min = '1';
+      range.max = '10';
+      range.step = '1';
+      range.value = '5';
+
+      const valueEl = document.createElement('span');
+      valueEl.className = 'confidenceValue';
+      valueEl.textContent = range.value;
+
+      range.addEventListener('input', () => {
+        const j = Number(cell.dataset.globalIndex);
+        selections[j].confidence = parseInt(range.value, 10);
+        valueEl.textContent = range.value;
+      });
+
+      bar.appendChild(label);
+      bar.appendChild(range);
+      bar.appendChild(valueEl);
+      cell.appendChild(bar);
+
+      const entry = selections[idx];
+      if (entry.selected) {
+        cell.classList.add('selected');
+        if (entry.confidence != null) {
+          range.value = String(entry.confidence);
+          valueEl.textContent = String(entry.confidence);
+        }
+      }
+
+      cell.addEventListener('click', () => handleSelection(idx, cell, phaseIndex));
+
+      imageGrid.appendChild(cell);
+    });
+  }
+
+  function handleSelection(globalIndex, cell, phaseIndex) {
+    const elapsed = (performance.now() - phaseStartTime) / 1000.0;
+    const entry = selections[globalIndex];
+
+    const currentSelectedIndex = getSelectedIndexForPhase(phaseIndex);
+
+    if (currentSelectedIndex === globalIndex) {
+      entry.selected = false;
+      entry.time = null;
+      entry.confidence = null;
+      entry.order = null;
+      cell.classList.remove('selected');
+      return;
+    }
+
+    if (currentSelectedIndex !== null) {
+      selections[currentSelectedIndex].selected = false;
+      selections[currentSelectedIndex].time = null;
+      selections[currentSelectedIndex].confidence = null;
+      selections[currentSelectedIndex].order = null;
+    }
+
+    const cells = imageGrid.querySelectorAll('.imgCell');
+    cells.forEach(c => c.classList.remove('selected'));
+
+    entry.selected = true;
+    entry.time = elapsed;
+    if (entry.confidence == null) {
+      entry.confidence = 5;
+    }
+    cell.classList.add('selected');
+  }
+
+  function getSelectedIndexForPhase(phaseIndex) {
+    for (let i = 0; i < selections.length; i++) {
+      if (!selections[i].selected) continue;
+      if (images[i].phaseIndex === phaseIndex) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  function validatePhaseSelection(phaseIndex) {
+    const idx = getSelectedIndexForPhase(phaseIndex);
+    if (idx === null) {
+      alert('Please select one image for this location before continuing.');
+      return false;
+    }
+    const sel = selections[idx];
+    if (sel.confidence == null) {
+      alert('Please set a confidence rating (1–10) for your selected image.');
+      return false;
+    }
+    return true;
+  }
+
+  function showQuiz() {
+    gridContainer.style.display = 'none';
+    quizContainer.style.display = 'block';
+  }
+
+  function validateQuiz() {
+    for (let i = 1; i <= 5; i++) {
+      const answer = document.querySelector(`input[name="q${i}"]:checked`);
+      if (!answer) {
+        alert('Please answer all familiarity questions.');
+        return false;
+      }
+      quizResponses[`question${i}`] = answer.value;
+    }
+    return true;
+  }
+
+  function calculateFamiliarityScore() {
+    let yesCount = 0;
+    Object.values(quizResponses).forEach(val => {
+      if (val === 'yes') yesCount++;
+    });
+    const percentage = (yesCount / 5) * 100;
+    return {
+      yesCount: yesCount,
+      totalQuestions: 5,
+      percentage: percentage,
+      classification: percentage >= 50 ? 'familiar' : 'unfamiliar'
+    };
+  }
+
+  function showFeedback() {
+    gridContainer.style.display = 'none';
+    feedbackContainer.style.display = 'block';
+  }
+
+  function finalizeSelection() {
+    const participantCode = participantCodeEl.value.trim();
+    const participantEmail = participantEmailEl.value.trim();
+    if (!participantCode) {
+      alert('Participant code is missing.');
+      return;
+    }
+
+    qualitativeFeedback = feedbackText.value.trim();
+
+    feedbackContainer.style.display = 'none';
+    downloadContainer.style.display = 'block';
+
+    const familiarityScore = calculateFamiliarityScore();
+
+    const session = {
+      participantCode: participantCode,
+      participantEmail: participantEmail || 'not provided',
+      sessionNumber: 1,
+      phaseOrder: phases.map(p => p.id),
+      images: images.map(img => ({ name: img.name, category: img.category })),
+      timestamp: new Date().toISOString(),
+      selections: selections,
+      familiarityQuiz: {
+        responses: quizResponses,
+        score: familiarityScore
+      },
+      qualitativeFeedback: qualitativeFeedback
+    };
+
+    const jsonStr = JSON.stringify(session, null, 2);
+
+    const downloadBtn = document.getElementById('downloadBtn');
+    downloadBtn.onclick = () => {
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      const base = `${participantCode}_selection_${ts}`;
+      const jsonBlob = new Blob([jsonStr], { type: 'application/json' });
+
+      const url = URL.createObjectURL(jsonBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = base + '.json';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
+    };
+  }
+
+  startBtn.addEventListener('click', () => {
+    const pcode = participantCodeEl.value.trim();
+    if (!pcode) {
+      alert('Please enter a participant code.');
+      return;
+    }
+    if (!phaseDefinitions.length) {
+      alert('No locations are defined in this tool.');
+      return;
+    }
+    setupDiv.style.display = 'none';
+    quizContainer.style.display = 'block';
+  });
+
+  quizNextBtn.addEventListener('click', () => {
+    if (!validateQuiz()) return;
+    quizNextBtn.disabled = true;
+    initExperiment();
+  });
+
+  finishBtn.addEventListener('click', () => {
+    if (!validatePhaseSelection(currentPhaseIndex)) return;
+
+    if (currentPhaseIndex < phases.length - 1) {
+      currentPhaseIndex += 1;
+      showPhase(currentPhaseIndex);
+    } else {
+      showFeedback();
+    }
+  });
+
+  feedbackSubmitBtn.addEventListener('click', () => {
+    feedbackSubmitBtn.disabled = true;
+    finalizeSelection();
+  });
+})();
+</script>
+</body>
+</html>

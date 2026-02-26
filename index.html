@@ -683,8 +683,7 @@
 
     const downloadBtn = document.getElementById('downloadBtn');
     downloadBtn.onclick = () => {
-      const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      const base = `${participantCode}_selection_${ts}`;
+      const base = `${participantCode}_Selection`;
       const jsonBlob = new Blob([jsonStr], { type: 'application/json' });
 
       const url = URL.createObjectURL(jsonBlob);
